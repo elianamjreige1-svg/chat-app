@@ -17,6 +17,23 @@ body{
     color:#fff;
 }
 
+.progress-circle{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.6);
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    font-weight:bold;
+}
+
 /* MAIN CONTAINER */
 #chat-container{
     display:flex;
@@ -45,6 +62,7 @@ body{
     color:white;
     cursor:pointer;
     font-size:14px; 
+	
 }
 
 #setBtn{
@@ -57,9 +75,29 @@ body{
     color:white;
     cursor:pointer;
     font-size:18px; 
+	border:none;
 }
 
-#recordBtn, #sendBtn, #imageBtn{
+#recordBtn{
+    display:flex;
+    padding:13px;
+    border-radius:15px;
+    border:none;
+    outline:none;
+    font-size:20px;
+	
+}
+
+#sendBtn{
+    display:flex;
+    padding:13px;
+    border-radius:15px;
+    border:none;
+    outline:none;
+    font-size:20px;
+}
+
+#imageBtn{
     display:flex;
     padding:13px;
     border-radius:15px;
@@ -84,8 +122,9 @@ body{
     background:rgba(0,0,0,0.3);
     border-radius:10px;
     padding:10px;
-    visibility:hidden;
+	
 }
+
 
 /* MESSAGE STYLE */
 .message{
@@ -129,7 +168,7 @@ body{
     gap:10px;
     margin-top:10px;
     flex-shrink:0;
-    align-items:center;
+	align-items:center;
 }
 
 #messageInput{
@@ -160,19 +199,20 @@ button:hover{
 #users strong {
     font-size:20px;
     padding:10px;
+   
     color: white;
     position: sticky;
     top: 0;
     z-index: 10;
-    flex-shrink: 0;
+    flex-shrink: 0; /* ما ينكمش */
 }
 
 #userList{
     list-style:none;
     padding:10px;
     margin:0;
-    overflow-y:auto;
-    flex:1;
+    overflow-y:auto; /* scroll بس على اللستة */
+    flex:1;          /* ياخد باقي مساحة #users */
 }
 
 /* USERS PANEL */
@@ -181,10 +221,10 @@ button:hover{
     width:200px;
     background:rgba(0,0,0,0.3);
     border-radius:10px;
-    padding:0;
+    padding:0;  /* نخلي padding للعناصر الداخلية */
     display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    flex-direction: column; /* مهم للفصل بين العنوان واللستة */
+    overflow: hidden;       /* نخلي scroll بس على اللستة */
 }
 
 #users.hidden{
@@ -194,11 +234,12 @@ button:hover{
     overflow:hidden;
 }
 
+/* USERS LIST */
 #userList li{
     display:flex;
     align-items:center;
     gap:6px;
-    margin-bottom:6px;
+	margin-bottom:6px;
     font-size:1.2em;
 }
 
@@ -215,7 +256,8 @@ button:hover{
     font-size:18px;
 }
 
-audio, video{
+/* AUDIO STYLE */
+audio{
     width:200px;
     margin-top:5px;
 }
@@ -226,7 +268,8 @@ audio, video{
     flex-direction:column;
 }
 #chat{
-    width:100%;
+width:100%;
+
 }
 #users{
     width:95%;
@@ -244,35 +287,99 @@ audio, video{
 <div id="chat-container">
 
 <div id="chat">
-<strong><span style="font-size:26px;color:#ff6a00">Karim's Chatting Room</span></strong>
+<strong><span style="font-size:26px;color:#ff6a00">Lotto Chatting Room</span></strong>
 <button id="toggleUsers">Hide Connected Users</button>
 <div id="usernameArea">
 <input id="usernameInput" placeholder="Enter username">
 <button id="setBtn" onclick="changeUsername()">Connect</button>
 </div>
 
-<div id="messages"></div>
+<div id="messages" style="visibility:hidden"></div>
 
 <div id="input-area">
+    <!-- Text input fills remaining space -->
     <input id="messageInput" placeholder="Type a message" disabled>
-    <button id="sendBtn" onclick="sendMessage()" disabled>➤</button>
-    <button id="recordBtn" disabled>🎤</button>
-    <button id="imageBtn" disabled>📷</button>
-</div>
-</div>
 
+    <!-- Buttons -->
+    <button id="sendBtn" onclick="sendMessage()" disabled>➤</button>
+	<button id="recordBtn" disabled>🎤</button>
+    <button id="imageBtn" disabled>📷</button><input type="file" id="imageInput" accept="image/*" style="display:none">
+</div>
+</div>
 <div id="users">
 <strong>Connected Users</strong>
+
 <ul id="userList"></ul>
 </div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const BASE_URL = "https://chat-app-xhhf.onrender.com"; // <-- replace with your Render URL
-const socket = io({ autoConnect:true });
 
-/* ===== USERS PANEL ===== */
+const socket = io({
+    autoConnect: true,
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+});
+
+let reconnecting = false;
+
+let preventReconnect = false;
+
+
+function reconnectSocket() {
+    if (reconnecting) return;
+    reconnecting = true;
+
+    socket.disconnect();
+    socket.io.opts.forceNew = true;
+    socket.connect();
+
+    setTimeout(() => { reconnecting = false; }, 2000);
+	}
+
+// 🔹 triggers عند العودة من الخلفية
+document.addEventListener("visibilitychange", () => {
+document.getElementById("sendBtn").disabled=true;
+document.getElementById("imageBtn").disabled=true;
+document.getElementById("recordBtn").disabled=true;
+document.getElementById("messageInput").disabled=true;
+
+
+    if (document.visibilityState === "visible" && !preventReconnect)
+	reconnectSocket();
+});
+window.addEventListener("focus", () => {
+
+if (!preventReconnect) reconnectSocket();
+});
+window.addEventListener("pageshow", (event) => {
+    if (event.persisted && !preventReconnect) reconnectSocket();
+});
+window.addEventListener("online", () => reconnectSocket());
+
+// 🔹 حفظ واسترجاع username أو أي بيانات session
+socket.on("connect", () => {
+
+    const storedUsername = sessionStorage.getItem("username");
+    if (storedUsername) {
+        socket.emit("set username", storedUsername);
+    }
+});
+
+/*
+document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible"){
+        // هنا المستخدم رجع للصفحة من الخلفية
+        location.reload(); // ➤ هاي تعمل refresh للصفحة
+    }
+});
+
+const socket = io();
+*/
+
+/* TOGGLE USERS */
 const toggleBtn = document.getElementById("toggleUsers");
 const usersPanel = document.getElementById("users");
 toggleBtn.onclick = () => {
@@ -280,155 +387,446 @@ toggleBtn.onclick = () => {
     toggleBtn.innerText = usersPanel.classList.contains("hidden") ? "Show Connected Users" : "Hide Connected Users";
 };
 
-/* ===== USERNAME ===== */
+/* USERNAME */
 let storedUsername = sessionStorage.getItem("username");
 if(storedUsername){
     document.getElementById("usernameInput").value = storedUsername;
-    socket.emit("set username", storedUsername);
+    socket.emit("set username",storedUsername);
+   // enableChat();
 }
 
 function changeUsername(){
     const username = document.getElementById("usernameInput").value.trim();
     if(username){
-        socket.emit("set username", username);
+        socket.emit("set username",username);
+        //enableChat();
     }
 }
 
-/* ===== ENABLE CHAT ===== */
-socket.on("enable chat", enableChat);
+// IMAGE UPLOAD
+// IMAGE & VIDEO UPLOAD FROM SAME BUTTON
+const imageBtn = document.getElementById("imageBtn");
+
+// مخفي input واحد للـ file
+const fileInput = document.createElement("input");
+fileInput.type = "file";
+fileInput.accept = "image/*,video/*"; // يسمح بالصور والفيديو
+fileInput.style.display = "none";
+document.body.appendChild(fileInput);
+
+imageBtn.onclick = () => {
+preventReconnect = true;
+fileInput.click()};
+
+fileInput.onchange = async () => {
+    let file = fileInput.files[0];
+    if (!file) return;
+
+    // تحديد النوع
+    const type = file.type.startsWith("video/") ? "video" : "image";
+
+// Compress image
+if(type === "image") {
+        file = await compressImage(file, 800, 0.7); // maxWidth=800, quality=0.7
+    }
+
+    // الحد الأقصى للحجم
+    if ((type === "image" && file.size > 5 * 1024 * 1024) || (type === "video" && file.size > 50 * 1024 * 1024)) {
+        alert(type === "image" ? "Image must be <5MB" : "Video must be <50MB");
+        fileInput.value = "";
+        return;
+    }
+
+    handleMedia(file, type);
+    fileInput.value = "";
+};
+
+// ========== IMAGE COMPRESSION ==========
+function compressImage(file, maxWidth, quality) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = e => {
+            img.src = e.target.result;
+        };
+        reader.onloadend = () => { };
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            if(width > maxWidth){
+                height = height * (maxWidth / width);
+                width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob(blob => {
+                resolve(new File([blob], file.name, { type: file.type }));
+            }, file.type, quality);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+
+
+// ================= HANDLE MEDIA FUNCTION =================
+function handleMedia(file, type){
+    const reader = new FileReader();
+    const messages = document.getElementById("messages");
+
+    const div = document.createElement("div");
+    div.className = "message";
+
+    let username = "You";
+    let color = null;
+
+    const now = new Date();
+    let hours = now.getHours();
+    let ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const time = hours + ':' + now.getMinutes().toString().padStart(2,'0') + " " + ampm;
+
+    const circle = document.createElement("div");
+    circle.className = "circle";
+    circle.style.background = color;
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    const nameEl = document.createElement("strong");
+    nameEl.innerText = username + ":";
+    nameEl.style.color = color;
+
+    const previewEl = document.createElement(type==="image"?"img":"video");
+    if(type==="image"){
+	    //previewEl.style.width="100%";
+        previewEl.style.maxWidth="100%";
+        previewEl.style.maxHeight="300px";
+        previewEl.style.borderRadius="10px";
+        previewEl.style.opacity="0.5";
+    } else {
+        previewEl.controls = true;
+        previewEl.width = 200;
+    }
+
+    const timeEl = document.createElement("span");
+    timeEl.style.fontSize="0.7em";
+    timeEl.style.color="#ddd";
+    timeEl.style.marginLeft="5px";
+    timeEl.innerText = " ⏰ " + time;
+
+    const progressCircle = document.createElement("div");
+    progressCircle.className="progress-circle";
+    progressCircle.innerText="0%";
+
+    bubble.appendChild(nameEl);
+    bubble.appendChild(document.createElement("br"));
+    bubble.appendChild(previewEl);
+    bubble.appendChild(document.createElement("br"));
+    bubble.appendChild(timeEl);
+    bubble.appendChild(progressCircle);
+
+    div.appendChild(circle);
+    div.appendChild(bubble);
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+
+    reader.onload = (e)=>{
+        previewEl.src = e.target.result;
+        previewEl.onload = () => { messages.scrollTop = messages.scrollHeight; }
+    };
+
+    reader.onloadend = () => {
+        const formData = new FormData();
+        formData.append(type, file);
+        formData.append("socketId", socket.id);
+
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (e)=>{
+            if(e.lengthComputable){
+                const percent = Math.round((e.loaded/e.total)*100);
+                progressCircle.innerText = percent + "%";
+            }
+        };
+        xhr.onload = ()=>{
+            progressCircle.style.display="none";
+            if(type==="image") previewEl.style.opacity="1";
+            div.setAttribute("data-sent","true");
+            messages.scrollTop = messages.scrollHeight;
+        };
+        xhr.onerror = ()=>{progressCircle.innerText="Error";}
+        xhr.open("POST", type==="image"?"https://chat-app-xhhf.onrender.com/upload-image":"https://chat-app-xhhf.onrender.com/upload-video");
+        xhr.send(formData);
+    };
+
+    reader.readAsDataURL(file);
+}
+
+socket.on("video message", ({username, color, video}) => {
+    const myUsername = document.getElementById("usernameInput").value;
+    if(username === myUsername) return;
+
+    const messages = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "message";
+
+    const now = new Date();
+    let hours = now.getHours();
+    let ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const time = hours + ':' + now.getMinutes().toString().padStart(2,'0') + " " + ampm;
+
+    div.innerHTML = `
+        <div class="circle" style="background:${color}"></div>
+        <div class="bubble">
+            <strong style="color:${color}">${username}:</strong><br>
+            <video src="${video}" controls width="200"></video><br>
+            <span style="font-size:0.7em;color:#ddd;margin-left:5px;"> ⏰ ${time}</span>
+        </div>`;
+
+    messages.appendChild(div);
+
+    const vid = div.querySelector("video");
+    vid.onloadeddata = () => {
+        messages.scrollTop = messages.scrollHeight;
+    };
+});
+
+// ================= UPDATE COLOR =================
+socket.on("image color", (serverColor)=>{
+    const lastSent = document.querySelector('.message[data-sent="true"]');
+    if(!lastSent) return;
+    const circle = lastSent.querySelector('.circle');
+    const nameEl = lastSent.querySelector('strong');
+    if(circle) circle.style.background = serverColor;
+    if(nameEl) nameEl.style.color = serverColor;
+    lastSent.setAttribute('data-sent','false');
+});
+
+// ================= RECEIVE MEDIA =================
+
+socket.on("image message", ({username, color, image}) => {
+    const myUsername = document.getElementById("usernameInput").value;
+    if(username === myUsername) return;
+
+    const messages = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "message";
+
+ 
+    const now = new Date();
+    let hours = now.getHours();
+    let ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const time = hours + ':' + now.getMinutes().toString().padStart(2,'0') + " " + ampm;
+    div.innerHTML = `
+        <div class="circle" style="background:${color}"></div>
+        <div class="bubble">
+            <strong style="color:${color}">${username}:</strong><br>
+            <img src="${image}" style="max-width:100%; max-height:300px; border-radius:10px;"><br>
+            <span style="font-size:0.7em;color:#ddd;margin-left:5px;"> ⏰ ${time}</span>
+        </div>`;
+
+    messages.appendChild(div);
+
+    const img = div.querySelector("img");
+    img.onload = () => {
+        messages.scrollTop = messages.scrollHeight;
+    };
+});
+
+socket.on("enable chat", () => {
+    enableChat();
+});
+
+socket.on("username exists", () => {
+    alert("Username already connected!");
+    sessionStorage.removeItem("username");
+	document.getElementById("usernameInput").value="";
+});
+
+socket.on("username is not registered", () => {
+    alert("Username not registered!");
+    sessionStorage.removeItem("username");
+	document.getElementById("usernameInput").value="";
+});
+
 function enableChat(){
     document.getElementById("messageInput").disabled = false;
     document.getElementById("sendBtn").disabled = false;
-    document.getElementById("imageBtn").disabled = false;
+	 document.getElementById("imageBtn").disabled = false;
     document.getElementById("recordBtn").disabled = false;
     document.getElementById("usernameInput").disabled = true;
     document.getElementById("setBtn").disabled = true;
     document.getElementById("usernameArea").style.display = "none";
-    document.getElementById("messages").style.visibility = "visible";
-    const username = document.getElementById("usernameInput").value.trim();
+let msg=document.getElementById("messages");
+msg.style.visibility="visible";
+    const username = document.getElementById("usernameInput").value.trim().trim();
     sessionStorage.setItem("username", username);
+	if(username==null)
+	msg.innerHTML="";
 }
 
-/* ===== TEXT MESSAGES ===== */
+/* SEND MESSAGE */
 function sendMessage(){
-    const input = document.getElementById("messageInput");
-    const msg = input.value.trim();
+    const input=document.getElementById("messageInput");
+    const msg=input.value.trim();
     if(msg){
-        socket.emit("chat message", msg);
-        input.value = "";
+        socket.emit("chat message",msg);
+        input.value="";
         input.focus();
     }
 }
-document.getElementById("messageInput").addEventListener("keydown", e=>{
+
+/* ENTER SEND */
+document.getElementById("messageInput").addEventListener("keydown",e=>{
     if(e.key==="Enter") sendMessage();
 });
 
-/* ===== RECEIVE MESSAGES ===== */
-socket.on("chat message", ({username,msg,color})=>{
+/* RECEIVE TEXT MESSAGE */
+socket.on("chat message",({username,msg,color})=>{
+    const messages=document.getElementById("messages");
+    const div=document.createElement("div");
+    div.className="message";
+    if(username===document.getElementById("usernameInput").value) {username="You";color=null}
+    const now = new Date();
+	let hours = now.getHours();
+	let ampm = hours >= 12 ? 'PM' : 'AM';
+	hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const time = hours.toString() + ':' + now.getMinutes().toString().padStart(2,'0')+" "+ampm;
+ div.innerHTML=`
+    <div class="circle" style="background:${color}"></div>
+    <div class="bubble">
+        <strong style="color:${color}">${username}:</strong> ${msg}<br>
+        <span style="font-size:0.7em;color:#ddd;align:right;margin-left:5px;"> ⏰ ${time}</span>
+    </div>`;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+});
+//let dura=0;
+//for duration
+
+
+
+/* RECEIVE VOICE MESSAGE */
+socket.on("voice message", ({username,color,audio}) => {
     const messages = document.getElementById("messages");
-    const div = document.createElement("div"); div.className="message";
-    if(username === document.getElementById("usernameInput").value) { username="You"; color=null; }
-    const now=new Date(); let hours=now.getHours(), ampm=hours>=12?'PM':'AM'; hours=hours%12||12;
-    const time=hours+':'+now.getMinutes().toString().padStart(2,'0')+" "+ampm;
-    div.innerHTML=`<div class="circle" style="background:${color}"></div>
-        <div class="bubble"><strong style="color:${color}">${username}:</strong> ${msg}
-        <br><span style="font-size:0.7em;color:#ddd;margin-left:5px;"> ⏰ ${time}</span></div>`;
+    const div = document.createElement("div");
+    div.className = "message";
+	
+	//const timeText = dur;
+	//alert(dur);
+ //const audioURL = typeof audio === "string" ? audio : URL.createObjectURL(audio);
+    if(username === document.getElementById("usernameInput").value) 
+	{username = "You";color=null}
+const now = new Date();
+	let hours = now.getHours();
+	let ampm = hours >= 12 ? 'PM' : 'AM';
+	hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const time = hours.toString() + ':' + now.getMinutes().toString().padStart(2,'0')+" "+ampm;
+ 
+ div.innerHTML = `
+        <div class="circle" style="background:${color}"></div>
+        <div class="bubble">
+            <strong style="color:${color}">${username}:</strong><br>
+            <audio controls src="${audio}" type="audio/mp4"></audio><br>
+			 	<span style="font-size:0.7em;color:#ddd;margin-left:5px;align:right"> ⏰ ${time}</span>
+               </div>`;
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
 });
 
-/* ===== SYSTEM MESSAGES ===== */
-socket.on("system message", msg=>{
+/* SYSTEM MESSAGE */
+socket.on("system message",(msg)=>{
     const messages=document.getElementById("messages");
-    const div=document.createElement("div"); div.className="message";
-    const now=new Date(); let hours=now.getHours(), ampm=hours>=12?'PM':'AM'; hours=hours%12||12;
-    const time=hours+':'+now.getMinutes().toString().padStart(2,'0')+" "+ampm;
-    div.innerHTML=`<div class="notif" style="background:rgba(255,255,255,0.1);font-style:italic;margin:auto;">
-        ${msg}<span style="font-size:0.7em;color:#ddd;margin-left:5px;"> ⏰ ${time}</span></div>`;
+    const div=document.createElement("div");
+    div.className="message";
+    const now = new Date();
+	let hours = now.getHours();
+	let ampm = hours >= 12 ? 'PM' : 'AM';
+	hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const time = hours.toString() + ':' + now.getMinutes().toString().padStart(2,'0')+" "+ampm;
+    div.innerHTML=`
+        <div class="notif" style="background:rgba(255,255,255,0.1);font-style:italic;margin:auto;">
+        ${msg}
+        <span style="font-size:0.7em;color:#ddd;margin-left:5px;"> &nbsp;&nbsp;⏰ ${time}</span>
+        </div>`;
     messages.appendChild(div);
-    messages.scrollTop=messages.scrollHeight;
+    messages.scrollTop = messages.scrollHeight;
 });
 
-/* ===== USERS LIST ===== */
-socket.on("update users", users=>{
-    const userList=document.getElementById("userList"); userList.innerHTML="";
+/* USERS LIST */
+socket.on("update users",(users)=>{
+    const userList=document.getElementById("userList");
+    userList.innerHTML="";
     users.forEach(u=>{
         const li=document.createElement("li");
         li.innerHTML=`<div class="circle" style="background:${u.color}"></div>${u.username}`;
         userList.appendChild(li);
     });
 });
+/*
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-/* ===== IMAGE / VIDEO UPLOAD ===== */
-const imageBtn = document.getElementById("imageBtn");
-const fileInput = document.createElement("input");
-fileInput.type = "file";
-fileInput.accept = "image/*,video/*";
-fileInput.style.display = "none";
-document.body.appendChild(fileInput);
+function playbeep() { 
+const oscillator = audioCtx.createOscillator(); 
+const gainNode = audioCtx.createGain(); 
+oscillator.connect(gainNode); 
+gainNode.connect(audioCtx.destination); 
+oscillator.type = "square"; 
+oscillator.frequency.setValueAtTime(130, audioCtx.currentTime);
+ // 🔒 consistent volume 
+gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); 
+ // smooth ramp (prevents first-click loud spike) 
+ gainNode.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.02); 
+ gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.18); 
+ oscillator.start(audioCtx.currentTime); 
+ oscillator.stop(audioCtx.currentTime + 0.18);
+ }
+const audioCtx2 = new (window.AudioContext || window.webkitAudioContext)();
 
-imageBtn.onclick = () => fileInput.click();
+function playbeepstop() { 
+const oscillator = audioCtx2.createOscillator(); 
+const gainNode = audioCtx2.createGain(); 
+oscillator.connect(gainNode); 
+gainNode.connect(audioCtx2.destination); 
+oscillator.type = "square"; 
+oscillator.frequency.setValueAtTime(100, audioCtx2.currentTime);
+ // 🔒 consistent volume 
+ gainNode.gain.setValueAtTime(0.5, audioCtx2.currentTime); 
+ // smooth ramp (prevents first-click loud spike) 
+ gainNode.gain.linearRampToValueAtTime(0.15, audioCtx2.currentTime + 0.02); 
+ gainNode.gain.linearRampToValueAtTime(0.01, audioCtx2.currentTime + 0.18); 
+ oscillator.start(audioCtx2.currentTime); 
+ oscillator.stop(audioCtx2.currentTime + 0.18); 
+ }
+*/
 
-fileInput.onchange = async () => {
-    let file = fileInput.files[0];
-    if(!file) return;
+/* 🎤 VOICE RECORDING */ 
+let recordingInterval = null;
+let seconds = 0;
+let mediaRecorder; 
+let audioChunks = []; 
+let isRecording = false; 
 
-    const type = file.type.startsWith("video/") ? "video" : "image";
-    if(type==="image" && file.size > 5*1024*1024) { alert("Image must be <5MB"); return; }
-    if(type==="video" && file.size > 50*1024*1024) { alert("Video must be <50MB"); return; }
-
-    uploadMedia(file, type);
-    fileInput.value="";
-};
-
-function uploadMedia(file, type){
-    const messages=document.getElementById("messages");
-    const div=document.createElement("div"); div.className="message";
-
-    const username="You"; let color=null;
-    const circle=document.createElement("div"); circle.className="circle"; circle.style.background=color;
-    const bubble=document.createElement("div"); bubble.className="bubble";
-    const nameEl=document.createElement("strong"); nameEl.innerText=username+":";
-    nameEl.style.color=color;
-
-    const previewEl=document.createElement(type==="image"?"img":"video");
-    previewEl.controls = type==="video";
-    previewEl.style.maxWidth = "100%";
-    previewEl.style.maxHeight = type==="image"? "300px": "200px";
-
-    bubble.appendChild(nameEl); bubble.appendChild(document.createElement("br"));
-    bubble.appendChild(previewEl);
-    div.appendChild(circle); div.appendChild(bubble);
-    messages.appendChild(div);
-   
-
-    const formData = new FormData();
-    formData.append(type, file);
-    formData.append("socketId", socket.id);
-    const endpoint = type==="image" ? "upload-image" : "upload-video";
-
-    fetch(`${BASE_URL}/${endpoint}`, { method:"POST", body:formData })
-      .then(res => res.json())
-      .then(data => { previewEl.src = data.url; })
-      .catch(err => { console.error(err); alert("Upload failed"); });
-     messages.scrollTop = messages.scrollHeight;
-}
-
-/* ===== VOICE RECORDING ===== */
-let mediaRecorder, audioChunks=[], isRecording=false,seconds=0;
-        function formatTime(sec){
+function formatTime(sec){
     const minutes = Math.floor(sec / 60);
     const remainingSeconds = sec % 60;
 
     return String(minutes).padStart(2,'0') + ":" + String(remainingSeconds).padStart(2,'0');
 }
-const recordBtn=document.getElementById("recordBtn");
 
-recordBtn.onclick = async () => {
-    if(!isRecording){
-        try{
-
-            document.getElementById("sendBtn").disabled=true;
+const recordBtn = document.getElementById("recordBtn"); 
+recordBtn.onclick = async () => { 
+if (!isRecording) { 
+//playbeep(); 
+document.getElementById("sendBtn").disabled=true;
 document.getElementById("imageBtn").disabled=true;
 let input=document.getElementById("messageInput");
 input.disabled=true;
@@ -450,51 +848,75 @@ recordingInterval = setInterval(() => {
 // فوراً: ضعنا الوضع كـ recording 
 isRecording = true; 
 recordBtn.innerText = "⏹"; 
-            const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, {type:'audio/mp4'});
-                const formData = new FormData();
-                formData.append("audio", audioBlob);
-                formData.append("socketId", socket.id);
 
+
+try { 
+// Stream جديد لكل تسجيل 
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/mp4' }); 
+audioChunks = []; 
+mediaRecorder.ondataavailable = e => audioChunks.push(e.data); 
+
+mediaRecorder.onstop = () => { 
+if(audioChunks.length===0) return; 
+const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' }); 
+const reader = new FileReader(); 
+reader.readAsDataURL(audioBlob); 
+//const audioURL = URL.createObjectURL(audioBlob);
+let v=document.getElementById("recordBtn");
+v.style.backgroundColor="#ff6a00";
+//playbeepstop();
 document.getElementById("sendBtn").disabled=false;
 document.getElementById("imageBtn").disabled=false;
 document.getElementById("messageInput").disabled=false;
 let input = document.getElementById("messageInput");
 input.style.backgroundColor="white";
 input.style.color="#000000";
-                
-                const messages=document.getElementById("messages");
-                const div=document.createElement("div"); div.className="message";
-                const circle=document.createElement("div"); circle.className="circle"; circle.style.background=null;
-                const bubble=document.createElement("div"); bubble.className="bubble";
-                const nameEl=document.createElement("strong"); nameEl.innerText="You:";
-                bubble.appendChild(nameEl); bubble.appendChild(document.createElement("br"));
-                const audioEl=document.createElement("audio"); audioEl.controls=true; bubble.appendChild(audioEl);
-                div.appendChild(circle); div.appendChild(bubble);
-                messages.appendChild(div);
-                messages.scrollTop = messages.scrollHeight;
+reader.onloadend = () => {
+    const formData = new FormData();
+    formData.append("audio", audioBlob); // الملف نفسه
+    formData.append("socketId", socket.id); // لإرسال اسم المستخدم/التعريف للسيرفر
 
-                fetch(`${BASE_URL}/upload-voice`, { method:"POST", body:formData })
-                    .then(res=>res.json())
-                    .then(data=>{ audioEl.src = data.url; })
-                    .catch(err=>{ console.error(err); alert("Voice upload failed"); });
-            };
-            mediaRecorder.start();
-            isRecording = true;
-            recordBtn.innerText = "⏹";
-        } catch(err){ console.error(err); alert("Mic access denied"); }
-    } else {
-        mediaRecorder.stop();
-        isRecording = false;
-        recordBtn.innerText = "🎤";
-    }
+    fetch("https://chat-app-xhhf.onrender.com/upload-voice", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => {
+        if(!res.ok) console.error("Upload failed");
+    })
+    .catch(err => console.error("Error uploading voice:", err));
+
+    document.getElementById("messageInput").value = "";
 };
 
-    /* EXIT CONFIRM */
+// release the mic 
+stream.getTracks().forEach(track => track.stop()); 
+audioChunks = []; }; 
+mediaRecorder.start(); 
+} 
+catch (err) { 
+console.error("Cannot access microphone:", err); 
+isRecording = false; 
+recordBtn.innerText = "🎤"; 
+} } 
+else { // Stop recording 
+setTimeout(() => { 
+if (mediaRecorder && mediaRecorder.state !== "inactive") { 
+mediaRecorder.stop(); 
+
+clearInterval(recordingInterval);
+recordingInterval = null;
+  document.getElementById("messageInput").placeholder = "Type a message...";
+// فضّي الحقل
+document.getElementById("messageInput").value = "";
+
+} }, 0); 
+isRecording = false; 
+recordBtn.innerText = "🎤";
+
+} };
+
+/* EXIT CONFIRM */
 window.addEventListener('beforeunload', function (e) {
     e.preventDefault();
     e.returnValue = '';
