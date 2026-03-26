@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat App</title>
+
+<style>
+/* BODY */
+body{
+    font-family:Arial,sans-serif;
+    margin:0;
+    height:100dvh;
+    overflow:hidden;
+    display:flex;
+    background:linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);
+    color:#fff;
+}
+
+.progress-circle{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    background:rgba(0,0,0,0.6);
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    font-weight:bold;
+}
+
+/* MAIN CONTAINER */
+#chat-container{
+    display:flex;
+    flex:1;
+    padding:10px;
+    gap:10px;
+}
+
+/* CHAT COLUMN */
+#chat{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    min-height:0;
+}
+
+/* TOGGLE BUTTON */
+#toggleUsers{
+    align-self:flex-end;
+    margin-bottom:5px;
+    background:#ff6a00;
+    border:none;
+    padding:8px 14px;
+    border-radius:15px;
+    color:white;
+    cursor:pointer;
+    font-size:18px; 
+	border:none;
+}
+
+#setBtn{
+    align-self:flex-end;
+    margin-bottom:5px;
+    background:#ff6a00;
+    border:none;
+    padding:10px;
+    border-radius:15px;
+    color:white;
+    cursor:pointer;
+    font-size:18px; 
+	border:none;
+}
+
+#recordBtn{
+    display:flex;
+    padding:13px;
+    border-radius:15px;
+    border:none;
+    outline:none;
+    font-size:20px;
+	background:#ffffff;
+}
+
+#sendBtn{
+    display:flex;
+    padding:13px;
+    border-radius:15px;
+    border:none;
+    outline:none;
+    font-size:20px;
+}
+
+#imageBtn{
+    display:flex;
+    padding:13px;
+    border-radius:15px;
+    border:none;
+    outline:none;
+    font-size:20px;
+}
+
+/* USERNAME AREA */
+#usernameArea{
+    margin-bottom:5px;
+}
+
+/* MESSAGES AREA */
+#messages{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    background:rgba(0,0,0,0.3);
+    border-radius:10px;
+    padding:10px;
+	
+}
+
+
+/* MESSAGE STYLE */
+.message{
+    display:flex;
+    gap:10px;
+    max-width:100%;
+    flex-shrink:0;
+}
+.message strong{
+    font-size:18px;
+}
+.circle{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    flex-shrink:0;
+    flex-grow:0;
+    margin-top:4px;
+}
+.bubble{
+    padding:12px 16px;
+    border-radius:15px;
+    background:rgba(255,255,255,0.2);
+    word-break:break-word;
+    font-size:20px;
+    max-width:100%;
+}
+
+.notif{
+    padding:12px 16px;
+    border-radius:15px;
+    background:rgba(255,255,255,0.2);
+    word-break:break-word;
+    font-size:17px;
+    max-width:100%;
+}
+
+/* INPUT AREA */
+#input-area{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+    flex-shrink:0;
+	align-items:center;
+}
+
+#messageInput{
+    flex: 1;
+    width: calc(100% - 143px);
+    padding:12px;
+    border-radius:25px;
+    border:none;
+    outline:none;
+    font-size:18px;
+}
+
+button{
+    padding:12px 18px;
+    border:none;
+    border-radius:25px;
+    background:#ff6a00;
+    color:white;
+    cursor:pointer;
+    font-weight:700;
+    font-size:14px;
+}
+
+button:hover{
+    background:#ff9000;
+}
+
+/* USERS PANEL */
+#users{
+    flex:0 0 200px;
+    width:200px;
+    background:rgba(0,0,0,0.3);
+    border-radius:10px;
+    padding:10px;
+    overflow-y:auto;
+    transition:all .25s ease;
+}
+
+#users.hidden{
+    flex:0 0 0;
+    width:0;
+    padding:0;
+    overflow:hidden;
+}
+
+/* USERS LIST */
+#userList li{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:6px;
+    font-size:1.2em;
+}
+
+#userList .circle{
+    width:12px;
+    height:12px;
+}
+
+#usernameInput{
+    padding:10px;
+    border-radius:15px;
+    border:none;
+    outline:none;
+    font-size:18px;
+}
+
+/* AUDIO STYLE */
+audio{
+    width:200px;
+    margin-top:5px;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+#chat-container{
+    flex-direction:column;
+}
+#users{
+    width:100%;
+    flex:0 0 auto;
+    height:35%;
+}
+#users.hidden{
+    height:0;
+}
+}
+</style>
+</head>
+
+<body>
+<div id="chat-container">
+<div id="chat">
+
+
+<button id="toggleUsers">Hide Connected Users</button>
+
+<div id="usernameArea">
+<input id="usernameInput" placeholder="Enter username">
+<button id="setBtn" onclick="changeUsername()">Connect</button>
+</div>
+
+<div id="messages"></div>
+
+<div id="input-area">
+    <!-- Text input fills remaining space -->
+    <input id="messageInput" placeholder="Type a message" disabled>
+
+    <!-- Buttons -->
+    <button id="sendBtn" onclick="sendMessage()" disabled>➤</button>
+    <button id="recordBtn" disabled>🎤</button>
+    <button id="imageBtn" disabled>📷</button>
+
+    <!-- Hidden file input -->
+    <input type="file" id="imageInput" accept="image/*" style="display:none">
+</div>
+</div>
+
+<div id="users">
+<h2>Connected Users</h2>
+<ul id="userList"></ul>
+</div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible"){
+        // هنا المستخدم رجع للصفحة من الخلفية
+        location.reload(); // ➤ هاي تعمل refresh للصفحة
+    }
+});
+const socket = io();
+
+/* TOGGLE USERS */
+const toggleBtn = document.getElementById("toggleUsers");
+const usersPanel = document.getElementById("users");
+toggleBtn.onclick = () => {
+    usersPanel.classList.toggle("hidden");
+    toggleBtn.innerText = usersPanel.classList.contains("hidden") ? "Show Connected Users" : "Hide Connected Users";
+};
+
+/* USERNAME */
+let storedUsername = sessionStorage.getItem("username");
+if(storedUsername){
+    document.getElementById("usernameInput").value = storedUsername;
+    socket.emit("set username",storedUsername);
+   // enableChat();
+}
+
+function changeUsername(){
+    const username = document.getElementById("usernameInput").value.trim();
+    if(username){
+        socket.emit("set username",username);
+        //enableChat();
+    }
+}
+
+// IMAGE UPLOAD
+const imageBtn = document.getElementById("imageBtn");
+const imageInput = document.getElementById("imageInput");
+
+imageBtn.onclick = () => imageInput.click();
+
+/*
+const isAndroid = /Android/i.test(navigator.userAgent);
+
+imageBtn.onclick = () => {
+    if(isAndroid){
+        const takePhoto = confirm("Press OK to take a photo, Cancel to choose from gallery");
+        if(takePhoto){
+            // فتح الكاميرا مباشرة
+            const cameraInput = document.createElement("input");
+            cameraInput.type = "file";
+            cameraInput.accept = "image/*";
+            cameraInput.capture = "environment"; // كاميرا خلفية
+            cameraInput.onchange = () => handleImageUpload(cameraInput.files[0]);
+            cameraInput.click();
+        } else {
+            // اختيار من المعرض
+            const galleryInput = document.createElement("input");
+            galleryInput.type = "file";
+            galleryInput.accept = "image/*";
+            galleryInput.onchange = () => handleImageUpload(galleryInput.files[0]);
+            galleryInput.click();
+        }
+    } else {
+        // iOS: يبقى كما هو
+        imageInput.click();
+    }
+};*/
+
+imageInput.onchange = () => {
+    const file = imageInput.files[0];
+    if (!file) return;
+
+    // ✅ فحص الحجم
+    if (file.size > 5 * 1024 * 1024) {
+        alert("Image must be less than 5MB");
+        imageInput.value = "";
+        return;
+    }
+
+    const reader = new FileReader();
+    const img = new Image();
+    const messages = document.getElementById("messages");
+
+    const div = document.createElement("div");
+    div.className = "message";
+
+    // 👤 بيانات المستخدم
+    let username = "You";
+    let color = null; // لون مؤقت أثناء الإرسال
+
+    // ⏰ الوقت
+    const now = new Date();
+    let hours = now.getHours();
+    let ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const time = hours.toString() + ':' + now.getMinutes().toString().padStart(2,'0') + " " + ampm;
+
+    // 🔴 الدائرة
+    const circle = document.createElement("div");
+    circle.className = "circle";
+    circle.style.background = color;
+
+    // bubble
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.style.position = "relative";
+
+    // الاسم
+    const nameEl = document.createElement("strong");
+    nameEl.innerText = username + ":";
+    nameEl.style.color = color;
+
+    // الصورة
+    const previewImg = document.createElement("img");
+    previewImg.style.maxWidth = "300px";
+    previewImg.style.maxHeight = "300px";
+    previewImg.style.borderRadius = "10px";
+    previewImg.style.opacity = "0.5";
+
+    // الوقت
+    const timeEl = document.createElement("span");
+    timeEl.style.fontSize = "0.7em";
+    timeEl.style.color = "#ddd";
+    timeEl.style.marginLeft = "5px";
+    timeEl.innerText = " ⏰ " + time;
+
+    // progress
+    const progressCircle = document.createElement("div");
+    progressCircle.className = "progress-circle";
+    progressCircle.innerText = "0%";
+
+    bubble.appendChild(nameEl);
+    bubble.appendChild(document.createElement("br"));
+    bubble.appendChild(previewImg);
+    bubble.appendChild(document.createElement("br"));
+    bubble.appendChild(timeEl);
+    bubble.appendChild(progressCircle);
+
+    div.appendChild(circle);
+    div.appendChild(bubble);
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+
+    reader.onload = (e) => {
+        img.src = e.target.result;
+        previewImg.src = e.target.result;
+
+        previewImg.onload = () => {
+            messages.scrollTop = messages.scrollHeight;
+        };
+    };
+
+    img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let MAX_WIDTH = 800;
+        let MAX_HEIGHT = 800;
+        let quality = 0.7;
+
+        if (file.size > 1024 * 1024) quality = 0.5;
+        else if (file.size > 500 * 1024) quality = 0.6;
+
+        const scale = Math.min(MAX_WIDTH / img.width, MAX_HEIGHT / img.height, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+            const formData = new FormData();
+            formData.append("image", blob, "compressed.jpg");
+            formData.append("socketId", socket.id);
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressCircle.innerText = percent + "%";
+                }
+            };
+
+            xhr.onload = function() {
+                progressCircle.style.display = "none";
+                previewImg.style.opacity = "1";
+
+                // ضع data-sent=true لتحديد آخر صورة أرسلتها
+                div.setAttribute("data-sent", "true");
+                messages.scrollTop = messages.scrollHeight;
+            };
+
+            xhr.onerror = function() {
+                progressCircle.innerText = "Error";
+            };
+
+            xhr.open("POST", "/upload-image");
+            xhr.send(formData);
+
+        }, "image/jpeg", quality);
+    };
+
+    reader.readAsDataURL(file);
+    imageInput.value = "";
+};
+
+// تحديث اللون مباشرة عند استلامه من السيرفر لأي صورة أرسلتها
+socket.on("image color", (serverColor) => {
+    // ابحث عن آخر رسالة أرسلتها (data-sent="true")
+    const lastSent = document.querySelector('.message[data-sent="true"]');
+    if (!lastSent) return;
+
+    const circle = lastSent.querySelector('.circle');
+    const nameEl = lastSent.querySelector('strong');
+    if(circle) circle.style.background = serverColor;
+    if(nameEl) nameEl.style.color = serverColor;
+
+    // ضع data-sent=false لتجنب التكرار
+    lastSent.setAttribute('data-sent','false');
+});
+
+// استقبال رسالة صورة من الآخرين
+socket.on("image message", ({username, color, image}) => {
+    const myUsername = document.getElementById("usernameInput").value;
+    if(username === myUsername) return;
+
+    const messages = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "message";
+
+    const now = new Date();
+    let hours = now.getHours();
+    let ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const time = hours.toString() + ':' + now.getMinutes().toString().padStart(2,'0') + " " + ampm;
+
+    div.innerHTML = `
+        <div class="circle" style="background:${color}"></div>
+        <div class="bubble">
+            <strong style="color:${color}">${username}:</strong><br>
+            <img src="${image}" style="max-width:300px; max-height:300px; border-radius:10px;"><br>
+            <span style="font-size:0.7em;color:#ddd;margin-left:5px;"> ⏰ ${time}</span>
+        </div>`;
+
+    messages.appendChild(div);
+
+    const imgEl = div.querySelector("img");
+    imgEl.src = image;
+    imgEl.onload = () => {
+        messages.scrollTop = messages.scrollHeight;
+    };
+});
+
+
+
+socket.on("enable chat", () => {
+    enableChat();
+});
+
+socket.on("username exists", () => {
+    alert("Username already connected!");
+    sessionStorage.removeItem("username");
+	document.getElementById("usernameInput").value="";
+});
+
+socket.on("username is not registered", () => {
+    alert("Username not registered!");
+    sessionStorage.removeItem("username");
+	document.getElementById("usernameInput").value="";
+});
+
+function enableChat(){
+    document.getElementById("messageInput").disabled = false;
+    document.getElementById("sendBtn").disabled = false;
+	 document.getElementById("imageBtn").disabled = false;
+    document.getElementById("recordBtn").disabled = false;
+    document.getElementById("usernameInput").disabled = true;
+    document.getElementById("setBtn").disabled = true;
+    document.getElementById("usernameArea").style.display = "none";
+
+    const username = document.getElementById("usernameInput").value.trim().trim();
+    sessionStorage.setItem("username", username);
+}
+
+/* SEND MESSAGE */
+function sendMessage(){
+    const input=document.getElementById("messageInput");
+    const msg=input.value.trim();
+    if(msg){
+        socket.emit("chat message",msg);
+        input.value="";
+        input.focus();
+    }
+}
+
+/* ENTER SEND */
+document.getElementById("messageInput").addEventListener("keydown",e=>{
+    if(e.key==="Enter") sendMessage();
+});
+
+/* RECEIVE TEXT MESSAGE */
+socket.on("chat message",({username,msg,color})=>{
+    const messages=document.getElementById("messages");
+    const div=document.createElement("div");
+    div.className="message";
+    if(username===document.getElementById("usernameInput").value) {username="You";color=null;}
+    const now = new Date();
+	let hours = now.getHours();
+	let ampm = hours >= 12 ? 'PM' : 'AM';
+	hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const time = hours.toString() + ':' + now.getMinutes().toString().padStart(2,'0')+" "+ampm;
+ div.innerHTML=`
+    <div class="circle" style="background:${color}"></div>
+    <div class="bubble">
+        <strong style="color:${color}">${username}:</strong> ${msg}<br>
+        <span style="font-size:0.7em;color:#ddd;align:right;margin-left:5px;"> ⏰ ${time}</span>
+    </div>`;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+});
+//let dura=0;
+//for duration
+
+
+
+/* RECEIVE VOICE MESSAGE */
+socket.on("voice message", ({username,color,audio}) => {
+    const messages = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "message";
+	
+	//const timeText = dur;
+	//alert(dur);
+ //const audioURL = typeof audio === "string" ? audio : URL.createObjectURL(audio);
+    if(username === document.getElementById("usernameInput").value) 
+	{username = "You";color=null;}
+const now = new Date();
+	let hours = now.getHours();
+	let ampm = hours >= 12 ? 'PM' : 'AM';
+	hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const time = hours.toString() + ':' + now.getMinutes().toString().padStart(2,'0')+" "+ampm;
+ 
+ div.innerHTML = `
+        <div class="circle" style="background:${color}"></div>
+        <div class="bubble">
+            <strong style="color:${color}">${username}:</strong><br>
+            <audio controls src="${audio}" type="audio/mp4"></audio><br>
+			 	<span style="font-size:0.7em;color:#ddd;margin-left:5px;align:right"> ⏰ ${time}</span>
+               </div>`;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+});
+
+/* SYSTEM MESSAGE */
+socket.on("system message",(msg)=>{
+    const messages=document.getElementById("messages");
+    const div=document.createElement("div");
+    div.className="message";
+    const now = new Date();
+	let hours = now.getHours();
+	let ampm = hours >= 12 ? 'PM' : 'AM';
+	hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const time = hours.toString() + ':' + now.getMinutes().toString().padStart(2,'0')+" "+ampm;
+    div.innerHTML=`
+        <div class="notif" style="background:rgba(255,255,255,0.1);font-style:italic;margin:auto;">
+        ${msg}
+        <span style="font-size:0.7em;color:#ddd;margin-left:5px;"> &nbsp;&nbsp;⏰ ${time}</span>
+        </div>`;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+});
+
+/* USERS LIST */
+socket.on("update users",(users)=>{
+    const userList=document.getElementById("userList");
+    userList.innerHTML="";
+    users.forEach(u=>{
+        const li=document.createElement("li");
+        li.innerHTML=`<div class="circle" style="background:${u.color}"></div>${u.username}`;
+        userList.appendChild(li);
+    });
+});
+/*
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playbeep() { 
+const oscillator = audioCtx.createOscillator(); 
+const gainNode = audioCtx.createGain(); 
+oscillator.connect(gainNode); 
+gainNode.connect(audioCtx.destination); 
+oscillator.type = "square"; 
+oscillator.frequency.setValueAtTime(130, audioCtx.currentTime);
+ // 🔒 consistent volume 
+gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); 
+ // smooth ramp (prevents first-click loud spike) 
+ gainNode.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.02); 
+ gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.18); 
+ oscillator.start(audioCtx.currentTime); 
+ oscillator.stop(audioCtx.currentTime + 0.18);
+ }
+const audioCtx2 = new (window.AudioContext || window.webkitAudioContext)();
+
+function playbeepstop() { 
+const oscillator = audioCtx2.createOscillator(); 
+const gainNode = audioCtx2.createGain(); 
+oscillator.connect(gainNode); 
+gainNode.connect(audioCtx2.destination); 
+oscillator.type = "square"; 
+oscillator.frequency.setValueAtTime(100, audioCtx2.currentTime);
+ // 🔒 consistent volume 
+ gainNode.gain.setValueAtTime(0.5, audioCtx2.currentTime); 
+ // smooth ramp (prevents first-click loud spike) 
+ gainNode.gain.linearRampToValueAtTime(0.15, audioCtx2.currentTime + 0.02); 
+ gainNode.gain.linearRampToValueAtTime(0.01, audioCtx2.currentTime + 0.18); 
+ oscillator.start(audioCtx2.currentTime); 
+ oscillator.stop(audioCtx2.currentTime + 0.18); 
+ }
+*/
+
+/* 🎤 VOICE RECORDING */ 
+let recordingInterval = null;
+let seconds = 0;
+let mediaRecorder; 
+let audioChunks = []; 
+let isRecording = false; 
+
+function formatTime(sec){
+    const minutes = Math.floor(sec / 60);
+    const remainingSeconds = sec % 60;
+
+    return String(minutes).padStart(2,'0') + ":" + String(remainingSeconds).padStart(2,'0');
+}
+
+const recordBtn = document.getElementById("recordBtn"); 
+recordBtn.onclick = async () => { 
+if (!isRecording) { 
+//playbeep(); 
+document.getElementById("sendBtn").disabled=true;
+document.getElementById("imageBtn").disabled=true;
+let input=document.getElementById("messageInput");
+input.disabled=true;
+input.style.backgroundColor="white";
+document.getElementById("messageInput").value = "Recording ...   00:00";
+seconds = 0;
+
+recordingInterval = setInterval(() => {
+    seconds++;
+
+    document.getElementById("messageInput").value = "Recording ...   "+formatTime(seconds);
+
+}, 1000);
+
+// فوراً: ضعنا الوضع كـ recording 
+isRecording = true; 
+recordBtn.innerText = "⏹"; 
+
+
+try { 
+// Stream جديد لكل تسجيل 
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); 
+mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/mp4' }); 
+audioChunks = []; 
+mediaRecorder.ondataavailable = e => audioChunks.push(e.data); 
+
+mediaRecorder.onstop = () => { 
+if(audioChunks.length===0) return; 
+const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' }); 
+const reader = new FileReader(); 
+reader.readAsDataURL(audioBlob); 
+//const audioURL = URL.createObjectURL(audioBlob);
+
+//playbeepstop();
+document.getElementById("sendBtn").disabled=false;
+document.getElementById("imageBtn").disabled=false;
+document.getElementById("messageInput").disabled=false;
+reader.onloadend = () => {
+    const formData = new FormData();
+    formData.append("audio", audioBlob); // الملف نفسه
+    formData.append("socketId", socket.id); // لإرسال اسم المستخدم/التعريف للسيرفر
+
+    fetch("/upload-voice", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => {
+        if(!res.ok) console.error("Upload failed");
+    })
+    .catch(err => console.error("Error uploading voice:", err));
+
+    document.getElementById("messageInput").value = "";
+};
+
+// release the mic 
+stream.getTracks().forEach(track => track.stop()); 
+audioChunks = []; }; 
+mediaRecorder.start(); 
+} 
+catch (err) { 
+console.error("Cannot access microphone:", err); 
+isRecording = false; 
+recordBtn.innerText = "🎤"; 
+} } 
+else { // Stop recording 
+setTimeout(() => { 
+if (mediaRecorder && mediaRecorder.state !== "inactive") { 
+mediaRecorder.stop(); 
+
+clearInterval(recordingInterval);
+recordingInterval = null;
+  document.getElementById("messageInput").placeholder = "Type a message...";
+// فضّي الحقل
+document.getElementById("messageInput").value = "";
+
+} }, 0); 
+isRecording = false; 
+recordBtn.innerText = "🎤";
+
+} };
+
+/* EXIT CONFIRM */
+window.addEventListener('beforeunload', function (e) {
+    e.preventDefault();
+    e.returnValue = '';
+});
+history.pushState({chat:true}, "", location.href);
+let backConfirmActive = false;
+window.addEventListener("popstate", function (e) {
+    if(backConfirmActive) return;
+    backConfirmActive = true;
+    const leave = confirm("Are you sure you want to exit the chat?");
+    if(leave){
+        sessionStorage.removeItem("username");
+        backConfirmActive = false;
+        window.close();
+    } else {
+        history.pushState({chat:true}, "", location.href);
+        backConfirmActive = false;
+    }
+});
+</script>
+</body>
+</html>
