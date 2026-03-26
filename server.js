@@ -20,8 +20,8 @@ cloudinary.config({
 app.use(express.json());
 app.use(express.static("public2"));
 
-// Multer for temporary file uploads
-const upload = multer({ dest: "temp/" });
+// Multer: memory storage for Render
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Users storage
 const users2 = {}; // socket.id -> { username, color }
@@ -38,7 +38,7 @@ function getRandomColor(existingColors = []) {
   return color;
 }
 
-// Helper: handle uploads
+// Helper: handle uploads (memory storage)
 async function handleUpload(req, res, resourceType, socketEvent, fileField) {
   try {
     const socketId = req.body.socketId;
@@ -46,18 +46,37 @@ async function handleUpload(req, res, resourceType, socketEvent, fileField) {
       return res.status(400).send("Invalid data");
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, { resource_type: resourceType });
-    fs.unlinkSync(req.file.path);
+    // Upload buffer to Cloudinary
+    const buffer = req.file.buffer;
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { resource_type: resourceType },
+      (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send("Upload error");
+        }
 
-    const user = users2[socketId];
-    io.emit(socketEvent, {
-      username: user.username,
-      [socketEvent.includes("voice") ? "audio" : socketEvent.includes("image") ? "image" : "video"]: result.secure_url,
-      color: user.color
-    });
+        const user = users2[socketId];
+        const key =
+          socketEvent.includes("voice")
+            ? "audio"
+            : socketEvent.includes("image")
+            ? "image"
+            : "video";
 
-    res.sendStatus(200);
+        // Emit to all clients
+        io.emit(socketEvent, {
+          username: user.username,
+          [key]: result.secure_url,
+          color: user.color
+        });
 
+        // Send URL back to uploader
+        res.send({ url: result.secure_url });
+      }
+    );
+
+    uploadStream.end(buffer);
   } catch (err) {
     console.error(err);
     res.status(500).send("Upload error");
@@ -85,7 +104,6 @@ io.on("connection", (socket) => {
 
   socket.on("set username", (newName) => {
     if (!newName) return;
-
     const name = newName.trim().toLowerCase();
 
     fs.readFile("users.txt", "utf8", (err, data) => {
@@ -97,21 +115,23 @@ io.on("connection", (socket) => {
 
       const usernamesArray = data
         .split("\n")
-        .map(u => u.trim().toLowerCase())
-        .filter(u => u);
+        .map((u) => u.trim().toLowerCase())
+        .filter((u) => u);
 
       if (!usernamesArray.includes(name)) {
         socket.emit("username is not registered");
         return;
       }
 
-      const existingUsernames = Object.values(users2).map(u => u.username.toLowerCase());
+      const existingUsernames = Object.values(users2).map((u) =>
+        u.username.toLowerCase()
+      );
       if (existingUsernames.includes(name)) {
         socket.emit("username exists");
         return;
       }
 
-      const existingColors = Object.values(users2).map(u => u.color);
+      const existingColors = Object.values(users2).map((u) => u.color);
 
       users2[socket.id] = {
         username: newName,
