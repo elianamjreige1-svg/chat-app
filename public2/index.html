@@ -350,6 +350,7 @@ document.getElementById("messageInput").disabled=true;
     if (document.visibilityState === "visible" && !preventReconnect)
 	reconnectSocket();
 });
+/*
 window.addEventListener("focus", () => {
 
 if (!preventReconnect) reconnectSocket();
@@ -358,7 +359,7 @@ window.addEventListener("pageshow", (event) => {
     if (event.persisted && !preventReconnect) reconnectSocket();
 });
 window.addEventListener("online", () => reconnectSocket());
-
+*/
 // 🔹 حفظ واسترجاع username أو أي بيانات session
 socket.on("connect", () => {
 
