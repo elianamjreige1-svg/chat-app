@@ -6,3 +6,5 @@ wassim
 juju
 hanna
 drelias
+ghassan
+sousou
