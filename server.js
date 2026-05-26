@@ -36,16 +36,14 @@ const pool = mysql.createPool({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
-   ssl: {
-    rejectUnauthorized: false
-  }
-  
-});
+  ssl: { rejectUnauthorized: false }
+}).promise();
+
 pool.on('error', (err) => {
   console.error(" Pool Error:", err);
 });
 
-const query = util.promisify(pool.query).bind(pool);
+//const query = util.promisify(pool.query).bind(pool);
 // Multer: memory storage for Render
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -134,14 +132,17 @@ io.on("connection", (socket) => {
   const name = newName.trim().toLowerCase();
 
   try {
-/*
-    const result = await query("SELECT * FROM users WHERE username=?", [name]);
 
-    if (result.length === 0) {
-      socket.emit("username is not registered");
-      return;
-    }
-*/
+   const [rows] = await pool.query(
+  "SELECT username FROM users WHERE username = ?",
+  [name]
+);
+
+if (rows.length === 0) {
+  socket.emit("username is not registered");
+  return;
+}
+
     const existingUsernames = Object.values(users2).map((u) =>
       u.username.toLowerCase()
     );
