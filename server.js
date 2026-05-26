@@ -97,7 +97,7 @@ async function handleUpload(req, res, resourceType, socketEvent, fileField) {
       }
     );
 
-  //  uploadStream.end(buffer);
+    uploadStream.end(buffer);
   } catch (err) {
     console.error(err);
     res.status(500).send("Upload error");
