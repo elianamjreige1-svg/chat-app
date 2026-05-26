@@ -13,21 +13,8 @@ const io = new Server(server, {
     origin: "*"
   }
 });
-//require("dotenv").config();
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-   ssl: {
-    rejectUnauthorized: false
-  }
-  
-}).promise();
-pool.on('error', (err) => {
-  console.error(" Pool Error:", err);
-});
+
+
 
 //const query = util.promisify(pool.query).bind(pool);
 
@@ -43,6 +30,22 @@ cloudinary.config({
 app.use(express.json());
 app.use(express.static("public2"));
 
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+   ssl: {
+    rejectUnauthorized: false
+  }
+  
+});
+pool.on('error', (err) => {
+  console.error(" Pool Error:", err);
+});
+
+const query = util.promisify(pool.query).bind(pool);
 // Multer: memory storage for Render
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -132,7 +135,7 @@ io.on("connection", (socket) => {
 
   try {
 
-    const [result] = await pool.query(
+    const result = await query(
   "SELECT username FROM users WHERE LOWER(username)=?",
   [name]
 );
