@@ -116,52 +116,48 @@ io.on("connection", (socket) => {
   let hasUsername = false;
 
   socket.emit("update users", Object.values(users2));
-  socket.on("set username", async (newName) => {
-    if (!newName) return;
-    const name = newName.trim().toLowerCase();
+ socket.on("set username", async (newName) => {
+  if (!newName) return;
+  const name = newName.trim().toLowerCase();
 
-    try {
+  try {
 
-      // REPLACES fs.readFile("users.txt"...)
+    const result = await query(
+      "SELECT username FROM users WHERE LOWER(username)=?",
+      [name]
+    );
 
-      const result = await pool.query(
-        "SELECT username FROM users WHERE LOWER(username) = $1",
-        [name]
-      );
-
-      if (result.rows.length === 0) {
-        socket.emit("username is not registered");
-        return;
-      }
-
-      // everything below stays the same
-
-      const existingUsernames = Object.values(users2).map((u) =>
-        u.username.toLowerCase()
-      );
-
-      if (existingUsernames.includes(name)) {
-        socket.emit("username exists");
-        return;
-      }
-
-      const existingColors = Object.values(users2).map((u) => u.color);
-
-      users2[socket.id] = {
-        username: newName,
-        color: getRandomColor(existingColors)
-      };
-
-      hasUsername = true;
-
-      io.emit("system message", `${newName} has joined the chat`);
-      io.emit("update users", Object.values(users2));
-      socket.emit("enable chat");
-
-    } catch (err) {
-      console.error("Database error:", err);
-      socket.emit("server error");
+    if (result.length === 0) {
+      socket.emit("username is not registered");
+      return;
     }
+
+    const existingUsernames = Object.values(users2).map((u) =>
+      u.username.toLowerCase()
+    );
+
+    if (existingUsernames.includes(name)) {
+      socket.emit("username exists");
+      return;
+    }
+
+    const existingColors = Object.values(users2).map((u) => u.color);
+
+    users2[socket.id] = {
+      username: newName,
+      color: getRandomColor(existingColors)
+    };
+
+    hasUsername = true;
+
+    io.emit("system message", `${newName} has joined the chat`);
+    io.emit("update users", Object.values(users2));
+    socket.emit("enable chat");
+
+  } catch (err) {
+    console.error("Database error:", err);
+    socket.emit("server error");
+  }
 });
   
 /*
