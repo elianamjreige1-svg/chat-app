@@ -3,7 +3,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
 const multer = require("multer");
-//const cloudinary = require("cloudinary").v2;
+const cloudinary = require("cloudinary").v2;
 const util = require("util");
 const mysql = require('mysql2');
 const app = express();
@@ -29,13 +29,13 @@ pool.on('error', (err) => {
 //const query = util.promisify(pool.query).bind(pool);
 
 // 🌟 Cloudinary configuration
-/*
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
-*/
+
 // Middleware
 app.use(express.json());
 app.use(express.static("public2"));
@@ -68,7 +68,7 @@ async function handleUpload(req, res, resourceType, socketEvent, fileField) {
 
     // Upload buffer to Cloudinary
     const buffer = req.file.buffer;
-    /*
+    
   //  const uploadStream = cloudinary.uploader.upload_stream(
       { resource_type: resourceType },
       (err, result) => {
@@ -96,7 +96,7 @@ async function handleUpload(req, res, resourceType, socketEvent, fileField) {
         res.send({ url: result.secure_url });
       }
     );
-*/
+
   //  uploadStream.end(buffer);
   } catch (err) {
     console.error(err);
