@@ -5,11 +5,14 @@ const fs = require("fs");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const util = require("util");
+const mysql = require('mysql2');
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
-const mysql = require('mysql2');
-// ================= DB =================
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+});
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -19,7 +22,7 @@ const pool = mysql.createPool({
   
 });
 pool.on('error', (err) => {
-  console.error("MySQL Pool Error:", err);
+  console.error(" Pool Error:", err);
 });
 
 const query = util.promisify(pool.query).bind(pool);
@@ -116,7 +119,7 @@ io.on("connection", (socket) => {
   let hasUsername = false;
 
   socket.emit("update users", Object.values(users2));
-/* socket.on("set username", async (newName) => {
+ socket.on("set username", async (newName) => {
   if (!newName) return;
   const name = newName.trim().toLowerCase();
 
@@ -159,8 +162,8 @@ io.on("connection", (socket) => {
     socket.emit("server error");
   }
 });
- */ 
-
+  
+/*
   socket.on("set username", (newName) => {
     if (!newName) return;
     const name = newName.trim().toLowerCase();
@@ -204,7 +207,7 @@ io.on("connection", (socket) => {
       socket.emit("enable chat");
     });
   });
-
+*/
   socket.on("chat message", (msg) => {
     if (!hasUsername) return;
     const user = users2[socket.id];
