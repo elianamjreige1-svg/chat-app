@@ -116,7 +116,7 @@ io.on("connection", (socket) => {
   let hasUsername = false;
 
   socket.emit("update users", Object.values(users2));
- socket.on("set username", async (newName) => {
+/* socket.on("set username", async (newName) => {
   if (!newName) return;
   const name = newName.trim().toLowerCase();
 
@@ -158,9 +158,9 @@ io.on("connection", (socket) => {
     console.error("Database error:", err);
     socket.emit("server error");
   }
-});
+});*/
   
-/*
+
   socket.on("set username", (newName) => {
     if (!newName) return;
     const name = newName.trim().toLowerCase();
@@ -203,7 +203,7 @@ io.on("connection", (socket) => {
       io.emit("update users", Object.values(users2));
       socket.emit("enable chat");
     });
-  });*/
+  });
 
   socket.on("chat message", (msg) => {
     if (!hasUsername) return;
