@@ -123,7 +123,7 @@ io.on("connection", (socket) => {
   try {
 
     const result = await query(
-      "SELECT username FROM users WHERE LOWER(username)=?",
+      "SELECT username FROM users WHERE username=?",
       [name]
     );
 
