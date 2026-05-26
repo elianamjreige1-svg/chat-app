@@ -21,12 +21,12 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT
   
-});
+}).promise();
 pool.on('error', (err) => {
   console.error(" Pool Error:", err);
 });
 
-const query = util.promisify(pool.query).bind(pool);
+//const query = util.promisify(pool.query).bind(pool);
 
 // 🌟 Cloudinary configuration
 cloudinary.config({
@@ -126,10 +126,10 @@ io.on("connection", (socket) => {
 
   try {
 
-    const result = await query(
-      "SELECT username FROM users WHERE LOWER(username)=?",
-      [name]
-    );
+    const [result] = await pool.query(
+  "SELECT username FROM users WHERE LOWER(username)=?",
+  [name]
+);
 
     if (result.length === 0) {
       socket.emit("username is not registered");
