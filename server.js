@@ -13,6 +13,7 @@ const io = new Server(server, {
     origin: "*"
   }
 });
+require("dotenv").config();
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
