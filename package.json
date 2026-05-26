@@ -2,17 +2,15 @@
   "name": "lottogame",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
-  "type": "commonjs",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "engines": {
-    "node": "v24.14.1"
-  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "cloudinary": "^2.9.0",
     "express": "^5.2.1",
     "mongodb": "^7.1.0",
     "multer": "^2.1.1",
