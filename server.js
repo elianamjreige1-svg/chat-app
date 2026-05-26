@@ -135,11 +135,8 @@ io.on("connection", (socket) => {
 
   try {
 
-    const [result] = await query(
-  "SELECT username FROM users WHERE LOWER(username)=?",
-  [name]
-);
-
+   // const result = await query("SELECT * FROM users WHERE username=?", [name]);
+const result = await query("SELECT * FROM users WHERE username='karim';");
     if (result.length === 0) {
       socket.emit("username is not registered");
       return;
