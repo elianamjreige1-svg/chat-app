@@ -134,14 +134,14 @@ io.on("connection", (socket) => {
   const name = newName.trim().toLowerCase();
 
   try {
+/*
+    const result = await query("SELECT * FROM users WHERE username=?", [name]);
 
-   // const result = await query("SELECT * FROM users WHERE username=?", [name]);
-const result = await query("SELECT * FROM users WHERE username='karim';");
     if (result.length === 0) {
       socket.emit("username is not registered");
       return;
     }
-
+*/
     const existingUsernames = Object.values(users2).map((u) =>
       u.username.toLowerCase()
     );
