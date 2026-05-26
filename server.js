@@ -120,7 +120,8 @@ io.on("connection", (socket) => {
   let hasUsername = false;
 
   socket.emit("update users", Object.values(users2));
- socket.on("set username", async (newName) => {
+/*
+  socket.on("set username", async (newName) => {
   if (!newName) return;
   const name = newName.trim().toLowerCase();
 
@@ -163,8 +164,9 @@ io.on("connection", (socket) => {
     socket.emit("server error");
   }
 });
+  */
   
-/*
+
   socket.on("set username", (newName) => {
     if (!newName) return;
     const name = newName.trim().toLowerCase();
@@ -208,7 +210,7 @@ io.on("connection", (socket) => {
       socket.emit("enable chat");
     });
   });
-*/
+
   socket.on("chat message", (msg) => {
     if (!hasUsername) return;
     const user = users2[socket.id];
