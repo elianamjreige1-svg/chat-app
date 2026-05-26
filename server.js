@@ -202,8 +202,8 @@ io.on("connection", (socket) => {
       io.emit("system message", `${newName} has joined the chat`);
       io.emit("update users", Object.values(users2));
       socket.emit("enable chat");
-    });*/
-  });
+    });
+  });*/
 
   socket.on("chat message", (msg) => {
     if (!hasUsername) return;
