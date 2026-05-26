@@ -69,7 +69,7 @@ async function handleUpload(req, res, resourceType, socketEvent, fileField) {
     // Upload buffer to Cloudinary
     const buffer = req.file.buffer;
     
-  //  const uploadStream = cloudinary.uploader.upload_stream(
+   const uploadStream = cloudinary.uploader.upload_stream(
       { resource_type: resourceType },
       (err, result) => {
         if (err) {
