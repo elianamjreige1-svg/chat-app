@@ -8,6 +8,21 @@ const cloudinary = require("cloudinary").v2;
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+const mysql = require('mysql2');
+// ================= DB =================
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
+  
+});
+pool.on('error', (err) => {
+  console.error("MySQL Pool Error:", err);
+});
+
+const query = util.promisify(pool.query).bind(pool);
 
 // 🌟 Cloudinary configuration
 cloudinary.config({
@@ -101,7 +116,55 @@ io.on("connection", (socket) => {
   let hasUsername = false;
 
   socket.emit("update users", Object.values(users2));
+  socket.on("set username", async (newName) => {
+    if (!newName) return;
+    const name = newName.trim().toLowerCase();
 
+    try {
+
+      // REPLACES fs.readFile("users.txt"...)
+
+      const result = await pool.query(
+        "SELECT username FROM users WHERE LOWER(username) = $1",
+        [name]
+      );
+
+      if (result.rows.length === 0) {
+        socket.emit("username is not registered");
+        return;
+      }
+
+      // everything below stays the same
+
+      const existingUsernames = Object.values(users2).map((u) =>
+        u.username.toLowerCase()
+      );
+
+      if (existingUsernames.includes(name)) {
+        socket.emit("username exists");
+        return;
+      }
+
+      const existingColors = Object.values(users2).map((u) => u.color);
+
+      users2[socket.id] = {
+        username: newName,
+        color: getRandomColor(existingColors)
+      };
+
+      hasUsername = true;
+
+      io.emit("system message", `${newName} has joined the chat`);
+      io.emit("update users", Object.values(users2));
+      socket.emit("enable chat");
+
+    } catch (err) {
+      console.error("Database error:", err);
+      socket.emit("server error");
+    }
+});
+  
+/*
   socket.on("set username", (newName) => {
     if (!newName) return;
     const name = newName.trim().toLowerCase();
@@ -143,7 +206,7 @@ io.on("connection", (socket) => {
       io.emit("system message", `${newName} has joined the chat`);
       io.emit("update users", Object.values(users2));
       socket.emit("enable chat");
-    });
+    });*/
   });
 
   socket.on("chat message", (msg) => {
