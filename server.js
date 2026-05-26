@@ -135,7 +135,7 @@ io.on("connection", (socket) => {
 
   try {
 
-    const [result] = await pool.query(
+    const [result] = await query(
   "SELECT username FROM users WHERE LOWER(username)=?",
   [name]
 );
