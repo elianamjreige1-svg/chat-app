@@ -559,7 +559,7 @@ function handleMedia(file, type){
             messages.scrollTop = messages.scrollHeight;
         };
         xhr.onerror = ()=>{progressCircle.innerText="Error";}
-        xhr.open("POST", type==="image"?"https://chat-app-xhhf.onrender.com/upload-image":"https://chat-app-xhhf.onrender.com/upload-video");
+        xhr.open("POST", type==="image"?"https://chat-app-ht4o.onrender.com/upload-image":"https://chat-app-ht4o.onrender.com/upload-video");
         xhr.send(formData);
     };
 
@@ -878,7 +878,7 @@ reader.onloadend = () => {
     formData.append("audio", audioBlob); // الملف نفسه
     formData.append("socketId", socket.id); // لإرسال اسم المستخدم/التعريف للسيرفر
 
-    fetch("https://chat-app-xhhf.onrender.com/upload-voice", {
+    fetch("https://chat-app-ht4o.onrender.com/upload-voice", {
         method: "POST",
         body: formData
     })
